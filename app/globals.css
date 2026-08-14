@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography"; /* BU SATIRI EKLEDİK */
+
+/* ... (Alt kısımdaki diğer CSS kodlarına dokunmana gerek yok) ... */
 
 :root {
   --background: #ffffff;
