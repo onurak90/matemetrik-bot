@@ -64,10 +64,11 @@ export async function POST(request) {
 
       🔥 KURALLAR:
       1. KELİME YOĞUNLUĞU: "${topic}" kelime öbeğini yalın haliyle metinde en az 8-10 kez geçir.
-      2. İÇİNDEKİLER: En başa H2/H3 başlıkları içeren tıklanabilir Markdown TOC ekle.
-      3. İÇ LİNK: Şu havuzdan en az 3 linki alakalı metinlere göm: ${JSON.stringify(realSiteLinks.length > 30 ? realSiteLinks.slice(0, 30) : realSiteLinks)}
-      4. DIŞ LİNK: Güvenilir kaynaklara 2 dış link ver.
-      5. SSS: Sona 3 soruluk SSS (FAQ) ekle.
+      2. YASAK: KESİNLİKLE "İçindekiler" (Table of Contents) bölümü OLUŞTURMA.
+      3. YASAK: KESİNLİKLE metin içine veya başlıkların yanına HTML anchor tag'leri (örn: <a id="..."></a>) EKLEME. Sadece temiz ve standart Markdown başlıkları (## Başlık) kullan.
+      4. İÇ LİNK: Şu havuzdan en az 3 linki alakalı metinlere göm: ${JSON.stringify(realSiteLinks.length > 30 ? realSiteLinks.slice(0, 30) : realSiteLinks)}
+      5. DIŞ LİNK: Güvenilir kaynaklara 2 dış link ver.
+      6. SSS: Sona 3 soruluk SSS (FAQ) ekle.
 
       SADECE AŞAĞIDAKİ JSON YAPISINI DOLDUR:
       {
