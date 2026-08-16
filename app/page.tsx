@@ -2,9 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
 export default function ContentStudio() {
-  // Fikir Jeneratörü State'leri (YENİ EKLENDİ 🚀)
+  // Fikir Jeneratörü & Trend State'leri
   const [ideationTopic, setIdeationTopic] = useState('');
   const [isIdeating, setIsIdeating] = useState(false);
   const [suggestedIdeas, setSuggestedIdeas] = useState<string[]>([]);
@@ -35,7 +38,6 @@ export default function ContentStudio() {
     if (savedFavorites) try { setFavorites(JSON.parse(savedFavorites)); } catch (e) {}
   }, []);
 
-  // YENİ: Fikir Üretme Fonksiyonu
   const handleIdeate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ideationTopic) return alert("Lütfen bir ana konu girin!");
@@ -51,15 +53,14 @@ export default function ContentStudio() {
       if (data.error) throw new Error(data.error);
       
       setSuggestedIdeas(data.ideas || []);
-      setSelectedIdeas([]); // Yeni fikirler gelince seçimleri sıfırla
+      setSelectedIdeas([]);
     } catch (err: any) {
-      alert("Fikir üretilirken hata: " + err.message);
+      alert("Trend aranırken hata: " + err.message);
     } finally {
       setIsIdeating(false);
     }
   };
 
-  // YENİ: Fikir Seçme / Çıkarma
   const toggleIdeaSelection = (idea: string) => {
     if (selectedIdeas.includes(idea)) {
       setSelectedIdeas(selectedIdeas.filter(i => i !== idea));
@@ -68,21 +69,19 @@ export default function ContentStudio() {
     }
   };
 
-  // YENİ: Seçilen Fikirleri Üretim Kuyruğuna Aktarma
   const addIdeasToQueue = () => {
     if (selectedIdeas.length === 0) return;
     const currentInput = topicsInput.trim();
-    const newLines = selectedIdeas.join('\n');
+    // Hacim emojilerini temizleyerek kuyruğa ekle
+    const newLines = selectedIdeas.map(idea => idea.replace(/🔥 Yüksek Hacim:|📊 Orta Hacim:|📉 Düşük Hacim:/g, '').trim()).join('\n');
     
     setTopicsInput(currentInput ? `${currentInput}\n${newLines}` : newLines);
     
-    // Aktarımdan sonra paneli temizle
     setSelectedIdeas([]);
     setSuggestedIdeas([]);
     setIdeationTopic('');
   };
 
-  // Toplu Üretim Fonksiyonu
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     const topicsList = topicsInput.split('\n').map(t => t.trim()).filter(t => t !== '');
@@ -146,27 +145,6 @@ export default function ContentStudio() {
     });
   };
 
-  const getSEOAnalysis = () => {
-    if (!generatedContent || !generatedContent.blogPost) return null;
-    const post = generatedContent.blogPost;
-    const currentTopic = generatedContent.originalTopic || generatedContent.focusKeyword || '';
-    
-    const words = post.trim().split(/\s+/);
-    const wordCount = words.length;
-    const keywordCount = (post.match(new RegExp(currentTopic, 'gi')) || []).length;
-    const density = wordCount > 0 ? ((keywordCount / wordCount) * 100).toFixed(2) : '0.00';
-
-    let score = 0;
-    if (generatedContent.metaDescription?.length >= 120) score += 20;
-    if (generatedContent.newTitle?.toLowerCase().includes(currentTopic.toLowerCase())) score += 20;
-    if (wordCount >= 800) score += 30; else if (wordCount >= 500) score += 20;
-    const densityNum = parseFloat(density);
-    if (densityNum >= 1 && densityNum <= 3) score += 30; else if (densityNum > 0) score += 15;
-
-    return { wordCount, keywordCount, density, score };
-  };
-
-  const seoStats = getSEOAnalysis();
   const isCurrentFavorite = generatedContent ? favorites.some(f => f.id === generatedContent.id) : false;
 
   return (
@@ -174,8 +152,8 @@ export default function ContentStudio() {
       <div className="max-w-7xl mx-auto">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Matemetrik İçerik Fabrikası</h1>
-            <p className="text-gray-500 mt-1">SEO uyumlu, sitemap destekli ve Toplu (Batch) üretim otomasyonu.</p>
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Matemetrik Pro Stüdyo</h1>
+            <p className="text-gray-500 mt-1">LaTeX Matematik Desteği + Sosyal Medya Motoru + Trend Analizi 🚀</p>
           </div>
         </header>
 
@@ -184,22 +162,22 @@ export default function ContentStudio() {
           {/* SOL PANEL */}
           <div className="w-full lg:w-1/3 flex flex-col gap-6">
             
-            {/* YENİ: AI KONU BULUCU (FİKİR JENERATÖRÜ) */}
+            {/* TREND VE HACİM BULUCU */}
             <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-2xl shadow-sm border border-blue-100 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10 text-4xl">💡</div>
+              <div className="absolute top-0 right-0 p-4 opacity-10 text-4xl">📈</div>
               <h2 className="text-lg font-bold text-blue-900 mb-3 flex items-center gap-2">
-                <span>💡</span> AI Konu Bulucu
+                <span>📈</span> Trend & Anahtar Kelime Analizi
               </h2>
               <form onSubmit={handleIdeate} className="flex gap-2 mb-4">
                 <input 
                   type="text" 
                   className="flex-1 border border-blue-200 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white" 
-                  placeholder="Örn: Limit ve Süreklilik..." 
+                  placeholder="Aranacak konu (Örn: Logaritma)" 
                   value={ideationTopic} 
                   onChange={(e) => setIdeationTopic(e.target.value)} 
                 />
                 <button type="submit" disabled={isIdeating} className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 rounded-lg text-sm transition-colors">
-                  {isIdeating ? 'Buluyor...' : 'Fikir Üret'}
+                  {isIdeating ? 'Tarama...' : 'Analiz Et'}
                 </button>
               </form>
 
@@ -210,7 +188,9 @@ export default function ContentStudio() {
                     {suggestedIdeas.map((idea, idx) => (
                       <label key={idx} className={`flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-colors border ${selectedIdeas.includes(idea) ? 'bg-blue-100 border-blue-300' : 'bg-white border-transparent hover:border-blue-200'}`}>
                         <input type="checkbox" className="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-blue-500" checked={selectedIdeas.includes(idea)} onChange={() => toggleIdeaSelection(idea)} />
-                        <span className="text-sm text-gray-800 leading-tight">{idea}</span>
+                        <span className="text-sm text-gray-800 leading-tight">
+                           {idx === 0 || idx === 1 ? '🔥 Yüksek Hacim: ' : '📊 Orta Hacim: '} {idea}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -221,7 +201,7 @@ export default function ContentStudio() {
               )}
             </div>
 
-            {/* MEVCUT: TOPLU ÜRETİM MODU */}
+            {/* TOPLU ÜRETİM MODU */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
                 <span className="bg-blue-100 text-blue-600 p-2 rounded-lg mr-2">🏭</span>
@@ -360,6 +340,7 @@ export default function ContentStudio() {
                     </div>
                   </div>
 
+                  {/* Kapak Görseli */}
                   {generatedContent.imagePrompts && generatedContent.imagePrompts.length > 0 && (
                      <div className="mb-8 relative rounded-xl overflow-hidden shadow-md bg-gray-900 group">
                         <img 
@@ -370,20 +351,47 @@ export default function ContentStudio() {
                      </div>
                   )}
 
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">📝 Makale İçeriği</h3>
+                  {/* YENİ: Makale İçeriği (LaTeX Destekli) */}
+                  <div className="mb-8">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">📝 Makale İçeriği (LaTeX Uyumlu)</h3>
                     <div className="prose prose-blue max-w-none text-gray-800 bg-gray-50 p-6 rounded-xl border border-gray-100 shadow-inner">
-                      <ReactMarkdown>{generatedContent.blogPost}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                        {generatedContent.blogPost}
+                      </ReactMarkdown>
                     </div>
                   </div>
                   
+                  {/* YENİ: Sosyal Medya Paylaşımları */}
+                  {generatedContent.socialMedia && (
+                    <div className="mt-8">
+                       <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">📱 Sosyal Medya Çıktıları</h3>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          
+                          {/* Twitter */}
+                          <div className="border border-blue-200 rounded-xl bg-blue-50/50 p-5 relative">
+                             <h4 className="font-bold text-blue-600 mb-2 flex items-center gap-2">🐦 X (Twitter) Flood</h4>
+                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{generatedContent.socialMedia.twitter}</p>
+                             <button onClick={() => handleCopyMini(generatedContent.socialMedia.twitter, 'twitter')} className="mt-3 text-xs bg-white border border-blue-200 px-3 py-1 rounded shadow-sm hover:bg-blue-50 text-blue-700 font-medium">Kopyala</button>
+                          </div>
+
+                          {/* Instagram */}
+                          <div className="border border-pink-200 rounded-xl bg-pink-50/50 p-5 relative">
+                             <h4 className="font-bold text-pink-600 mb-2 flex items-center gap-2">📸 Instagram Post</h4>
+                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{generatedContent.socialMedia.instagram}</p>
+                             <button onClick={() => handleCopyMini(generatedContent.socialMedia.instagram, 'instagram')} className="mt-3 text-xs bg-white border border-pink-200 px-3 py-1 rounded shadow-sm hover:bg-pink-50 text-pink-700 font-medium">Kopyala</button>
+                          </div>
+
+                       </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
             ) : (
               <div className="h-full min-h-[400px] bg-white rounded-2xl border flex flex-col items-center justify-center text-gray-400 p-8">
-                <span className="text-5xl mb-4">🏭</span>
-                <h3 className="text-xl font-bold text-gray-600 mb-2">İçerik Bekleniyor</h3>
-                <p>Sol taraftaki panelden konuları bularak veya yazarak üretime başlayın.</p>
+                <span className="text-5xl mb-4">⚙️</span>
+                <h3 className="text-xl font-bold text-gray-600 mb-2">Makale Motoru Beklemede</h3>
+                <p className="text-center text-sm mt-2 max-w-md">Sol taraftaki panelden "Limit", "Türev" gibi konular aratarak trendleri görebilir, seçtiklerini LaTeX ve Sosyal Medya destekli üretime sokabilirsin.</p>
               </div>
             )}
           </div>
