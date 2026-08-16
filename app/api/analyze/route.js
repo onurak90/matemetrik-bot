@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as cheerio from 'cheerio';
+import sharp from 'sharp';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -9,23 +10,6 @@ export async function POST(request) {
 
     if (!topic) {
       return new Response(JSON.stringify({ error: 'Konu zorunludur.' }), { status: 400 });
-    }
-
-    let realSiteLinks = [];
-    try {
-      const sitemapRes = await fetch('https://matemetrik.com/sitemap.xml');
-      if (sitemapRes.ok) {
-        const sitemapText = await sitemapRes.text();
-        const matches = sitemapText.match(/<loc>(.*?)<\/loc>/g);
-        if (matches) {
-          realSiteLinks = matches
-            .map(m => m.replace(/<\/?loc>/g, ''))
-            .filter(link => !link.endsWith('.xml') && link !== 'https://matemetrik.com/'); 
-        }
-      }
-    } catch (e) {
-      console.warn("Sitemap çekilemedi.");
-      realSiteLinks = ["https://matemetrik.com/"];
     }
 
     let competitorOutline = "";
@@ -39,14 +23,15 @@ export async function POST(request) {
           headings.push($(el).text().trim());
         });
         competitorOutline = headings.slice(0, 15).join(', ');
-      } catch (e) {
-        console.warn("Rakip site okunamadı:");
-      }
+      } catch (e) {}
     }
 
     const model = genAI.getGenerativeModel({
       model: "gemini-3.6-flash", 
-      generationConfig: { responseMimeType: "application/json" }
+      generationConfig: { 
+        responseMimeType: "application/json",
+        temperature: 0.7 
+      }
     });
 
     const prompt = `
@@ -54,59 +39,169 @@ export async function POST(request) {
       Şu konuya göre detaylı, özgün bir blog yazısı hazırla:
       
       Odak Anahtar Kelime: ${topic}
-      Ton: ${tone} | Uzunluk: ${length}
+      Yazım Tarzı: ${tone} | Uzunluk: ${length}
       ${customInstructions ? `ÖZEL TALİMAT: ${customInstructions}` : ''}
       
       ${competitorOutline ? `🔥 RAKİP ANALİZİ: Rakip site şu alt başlıkları kullanmış: [${competitorOutline}]. Bunlardan daha kapsamlı bir içerik üret.` : ''}
 
-      🔥 KURALLAR:
-      1. MATEMATİK FORMÜLLERİ: Metin içindeki TÜM matematiksel ifadeler, denklemler ve semboller için KESİNLİKLE LaTeX formatı kullan. Satır içi (inline) formüllerde $, blok (block) formüllerde $$ sembollerini kullan.
-      2. YASAKLAR: KESİNLİKLE "İçindekiler" tablosu veya <a id="..."> html etiketleri kullanma.
-      3. İÇ LİNK: Şu havuzdan en az 3 linki alakalı metinlere göm: ${JSON.stringify(realSiteLinks.length > 30 ? realSiteLinks.slice(0, 30) : realSiteLinks)}
+      🔥 KURALLAR VE ZORUNLU GÖREVLER:
+      1. MATEMATİKSEL İFADELER / FORMÜLLER: SADECE konu doğrudan matematik veya fizik ile ilgiliyse LaTeX formülü kullan. Konu matematik/fizik değilse KESİNLİKLE formül veya denklem KULLANMA.
+      2. İÇ LİNK: KESİNLİKLE İÇ LİNK KULLANMA. İç linkleme yapmak yasaktır.
+      3. DIŞ LİNK (ZORUNLU): Konuyla ilgili güvenilir dış kaynaklara en az 2 adet Markdown dış link ver.
+      4. GEMİNİ GÖRSEL ÜRETİMİ: Konuyla BİREBİR örtüşen, profesyonel bir kapak görseli için detaylı bir İngilizce görsel promptu (\`imagePrompt\`) hazırla.
+      5. İNSTAGRAM PROMPTLARI: Kaydırmalı 3 adet Instagram slaytı için konuyu nokta atışı anlatan, içinde başlık ve özet maddeler barındıran profesyonel İngilizce görsel promptları (\`instagramPromptSlides\`) hazırla.
+      6. YASAKLAR: "İçindekiler" tablosu veya HTML anchor tag'leri kullanma. JSON içinde asla bozuk tırnak kullanma.
 
-      SADECE AŞAĞIDAKİ JSON YAPISINI DOLDUR:
+      SADECE AŞAĞIDAKİ GEÇERLİ JSON FORMATINI DOLDUR (Başka hiçbir metin veya açıklama ekleme):
       {
-        "newTitle": "Makale başlığı (H1)",
+        "newTitle": "Makale basligi",
         "slug": "seo-url",
         "focusKeyword": "${topic}",
         "metaDescription": "130-155 karakter özet",
         "tags": ["etiket1", "etiket2"],
-        "blogPost": "Markdown formatında tam içerik",
+        "blogPost": "Markdown formatinda, İÇ LİNK OLMADAN, sadece dış linkler barındıran tam içerik",
+        "imagePrompt": "Gemini tarafından konuya özel olarak üretilmiş, detaylı ve bağlamsal İngilizce kapak görseli promptu, modern aesthetic, 8k",
         "socialMedia": {
-          "twitter": "Bu makale için dikkat çekici, emojili ve hashtagli bir Tweet dizisi (Thread) hazırla.",
-          "instagram": "Bu makale için eğitim odaklı, dikkat çekici bir Instagram gönderi açıklaması ve popüler matematik hashtagleri hazırla."
+          "twitter": "X platformu için detaylı, uzun ve etkileyici flood / gönderi metni.",
+          "instagramCaption": "Instagram'da görselin altına yazılacak açıklama ve hashtagler.",
+          "instagramPromptSlides": [
+            {
+              "slideNo": 1,
+              "imageGenPrompt": "Professional square 1:1 infographic design for Instagram carousel, directly related to the topic, featuring main title and summary points."
+            },
+            {
+              "slideNo": 2,
+              "imageGenPrompt": "Professional square 1:1 infographic design for Instagram carousel, directly related to the topic, featuring subtitle and detailed descriptive points."
+            },
+            {
+              "slideNo": 3,
+              "imageGenPrompt": "Professional square 1:1 infographic design for Instagram carousel, directly related to the topic, featuring conclusion header and checklist."
+            }
+          ]
         }
       }
     `;
 
-    let result = null;
-    let maxRetries = 3;
-    let attempt = 0;
-
-    while (attempt < maxRetries) {
+    let result = await model.generateContent(prompt);
+    let rawText = result.response.text();
+    
+    let cleanJson = rawText.trim();
+    if (cleanJson.startsWith("```json")) {
+      cleanJson = cleanJson.replace(/^```json/, "").replace(/```$/, "").trim();
+    } else if (cleanJson.startsWith("```")) {
+      cleanJson = cleanJson.replace(/^```/, "").replace(/```$/, "").trim();
+    }
+    
+    let data;
+    try {
+      data = JSON.parse(cleanJson);
+    } catch (parseErr) {
       try {
-        result = await model.generateContent(prompt);
-        break; 
-      } catch (err) {
-        attempt++;
-        if (err.message.includes('503') || err.message.includes('high demand') || err.message.includes('overloaded')) {
-          if (attempt >= maxRetries) throw new Error("Google sunucuları şu an çok yoğun. Lütfen bekleyip tekrar dene.");
-          await new Promise(resolve => setTimeout(resolve, 6000));
-        } else {
-          throw err; 
-        }
+        const fixedText = cleanJson.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").replace(/,\s*}/g, "}").replace(/,\s*]/g, "]");
+        data = JSON.parse(fixedText);
+      } catch (secondErr) {
+        throw new Error("Yapay zeka yanıtı JSON formatına tam uymadı. Lütfen tekrar deneyin.");
       }
     }
 
-    const cleanJson = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
-    const data = JSON.parse(cleanJson);
+    // SEO Analizi
+    const textContent = data.blogPost || "";
+    const wordCount = textContent.split(/\s+/).filter(Boolean).length;
+    const keywordRegex = new RegExp(topic, "gi");
+    const keywordMatches = textContent.match(keywordRegex);
+    const keywordCount = keywordMatches ? keywordMatches.length : 0;
+    const keywordDensity = wordCount > 0 ? ((keywordCount / wordCount) * 100).toFixed(2) : 0;
+
+    let seoScore = 100;
+    let seoChecks = [];
+
+    if (wordCount >= 400) {
+      seoChecks.push({ label: "Kelime Sayısı", status: "İyi", desc: `${wordCount} kelime` });
+    } else {
+      seoScore -= 20;
+      seoChecks.push({ label: "Kelime Sayısı", status: "Geliştirilmeli", desc: `${wordCount} kelime` });
+    }
+
+    const titleLen = data.newTitle ? data.newTitle.length : 0;
+    if (titleLen >= 30 && titleLen <= 65) {
+      seoChecks.push({ label: "Başlık Uzunluğu (H1)", status: "Mükemmel", desc: `${titleLen} karakter` });
+    } else {
+      seoScore -= 15;
+      seoChecks.push({ label: "Başlık Uzunluğu (H1)", status: "Uyarı", desc: `${titleLen} karakter` });
+    }
+
+    const metaLen = data.metaDescription ? data.metaDescription.length : 0;
+    if (metaLen >= 130 && metaLen <= 155) {
+      seoChecks.push({ label: "Meta Açıklama", status: "Mükemmel", desc: `${metaLen} karakter` });
+    } else {
+      seoScore -= 15;
+      seoChecks.push({ label: "Meta Açıklama", status: "Uyarı", desc: `${metaLen} karakter` });
+    }
+
+    if (keywordDensity >= 0.5 && keywordDensity <= 3.0) {
+      seoChecks.push({ label: "Anahtar Kelime Yoğunluğu", status: "Mükemmel", desc: `%${keywordDensity}` });
+    } else {
+      seoScore -= 15;
+      seoChecks.push({ label: "Anahtar Kelime Yoğunluğu", status: "Düşük/Yüksek", desc: `%${keywordDensity}` });
+    }
+
+    data.seoAnalytics = {
+      score: Math.max(seoScore, 30),
+      wordCount,
+      keywordDensity,
+      checks: seoChecks
+    };
+
+    try {
+      const rawImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(data.imagePrompt)}?width=1200&height=630&nologo=true`;
+      const imageRes = await fetch(rawImageUrl);
+      const inputBuffer = Buffer.from(await imageRes.arrayBuffer());
+
+      const titleText = data.newTitle || "";
+      const words = titleText.split(' ');
+      let lines = [];
+      let currentLine = '';
+      words.forEach(word => {
+        if ((currentLine + ' ' + word).trim().length > 30) {
+          lines.push(currentLine.trim());
+          currentLine = word;
+        } else {
+          currentLine += (currentLine ? ' ' : '') + word;
+        }
+      });
+      if (currentLine) lines.push(currentLine.trim());
+      const startY = lines.length === 1 ? 320 : (lines.length === 2 ? 300 : 280);
+
+      const svgOverlay = `
+        <svg width="1200" height="630">
+          <style>
+            .title { fill: white; font-size: 46px; font-weight: 900; font-family: Arial, sans-serif; text-anchor: middle; }
+            .badge { fill: #2563eb; }
+            .badge-text { fill: white; font-size: 20px; font-weight: bold; font-family: Arial, sans-serif; letter-spacing: 2px; }
+          </style>
+          <rect width="1200" height="630" fill="rgba(0, 0, 0, 0.5)" />
+          <rect x="460" y="160" width="280" height="45" rx="22.5" class="badge" />
+          <text x="600" y="188" text-anchor="middle" class="badge-text">MATEMETRİK ÖZEL</text>
+          <text x="600" y="${startY}" class="title">
+            ${lines.map((line, idx) => `<tspan x="600" dy="${idx === 0 ? 0 : 55}">${line}</tspan>`).join('')}
+          </text>
+        </svg>
+      `;
+
+      const compositeBuffer = await sharp(inputBuffer)
+        .resize(1200, 630)
+        .composite([{ input: Buffer.from(svgOverlay), top: 0, left: 0 }])
+        .jpeg({ quality: 90 })
+        .toBuffer();
+
+      data.bakedImage = `data:image/jpeg;base64,${compositeBuffer.toString('base64')}`;
+    } catch (e) {
+      data.bakedImage = `https://image.pollinations.ai/prompt/${encodeURIComponent(data.imagePrompt)}?width=1200&height=630&nologo=true`;
+    }
 
     return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
     
   } catch (error) {
-    if (error.message.includes('429') || error.message.includes('quota')) {
-       return new Response(JSON.stringify({ error: 'Google API ücretsiz günlük kotanız doldu.' }), { status: 429, headers: { 'Content-Type': 'application/json' } });
-    }
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }

@@ -7,20 +7,17 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
 export default function ContentStudio() {
-  // Fikir Jeneratörü & Trend State'leri
   const [ideationTopic, setIdeationTopic] = useState('');
   const [isIdeating, setIsIdeating] = useState(false);
   const [suggestedIdeas, setSuggestedIdeas] = useState<string[]>([]);
   const [selectedIdeas, setSelectedIdeas] = useState<string[]>([]);
 
-  // Form State'leri
   const [topicsInput, setTopicsInput] = useState('');
   const [url, setUrl] = useState('');
-  const [tone, setTone] = useState('Profesyonel ve Bilgi Verici');
-  const [length, setLength] = useState('Orta (500-800 Kelime)');
+  const [tone, setTone] = useState('Bilgilendirme');
+  const [length, setLength] = useState('Orta (600 kelime)');
   const [customInstructions, setCustomInstructions] = useState('');
   
-  // Uygulama State'leri
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0, currentTopic: '' });
   
@@ -72,11 +69,8 @@ export default function ContentStudio() {
   const addIdeasToQueue = () => {
     if (selectedIdeas.length === 0) return;
     const currentInput = topicsInput.trim();
-    // Hacim emojilerini temizleyerek kuyruğa ekle
     const newLines = selectedIdeas.map(idea => idea.replace(/🔥 Yüksek Hacim:|📊 Orta Hacim:|📉 Düşük Hacim:/g, '').trim()).join('\n');
-    
     setTopicsInput(currentInput ? `${currentInput}\n${newLines}` : newLines);
-    
     setSelectedIdeas([]);
     setSuggestedIdeas([]);
     setIdeationTopic('');
@@ -114,7 +108,7 @@ export default function ContentStudio() {
         setGeneratedContent(contentWithData);
 
         if (i < topicsList.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 8000));
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
       } catch (error: any) {
         alert(`'${currentTopic}' üretilirken hata oluştu: ` + error.message);
@@ -148,12 +142,23 @@ export default function ContentStudio() {
   const isCurrentFavorite = generatedContent ? favorites.some(f => f.id === generatedContent.id) : false;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 font-sans">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-4 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-8 flex items-center justify-between">
+        
+        {/* HEADER */}
+        <header className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between border-b border-gray-200 pb-6 gap-4 bg-white p-6 rounded-2xl shadow-sm border">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Matemetrik Pro Stüdyo</h1>
-            <p className="text-gray-500 mt-1">LaTeX Matematik Desteği + Sosyal Medya Motoru + Trend Analizi 🚀</p>
+            <div className="flex items-center gap-3">
+              <span className="bg-blue-600 text-white p-2.5 rounded-xl shadow-md text-lg">⚡</span>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-gray-900">
+                Matemetrik Pro Stüdyo
+              </h1>
+            </div>
+            <p className="text-gray-500 text-xs md:text-sm mt-1 ml-11">Yapay Zeka Destekli Modern SEO & Sosyal Medya Komuta Merkezi</p>
+          </div>
+          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-xs font-semibold text-emerald-700">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Sistem Aktif & Hazır
           </div>
         </header>
 
@@ -162,102 +167,107 @@ export default function ContentStudio() {
           {/* SOL PANEL */}
           <div className="w-full lg:w-1/3 flex flex-col gap-6">
             
-            {/* TREND VE HACİM BULUCU */}
-            <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-2xl shadow-sm border border-blue-100 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10 text-4xl">📈</div>
-              <h2 className="text-lg font-bold text-blue-900 mb-3 flex items-center gap-2">
-                <span>📈</span> Trend & Anahtar Kelime Analizi
+            {/* TREND & KELİME ANALİZİ */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 relative overflow-hidden">
+              <h2 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <span className="text-blue-600">📈</span> Trend & Anahtar Kelime
               </h2>
               <form onSubmit={handleIdeate} className="flex gap-2 mb-4">
                 <input 
                   type="text" 
-                  className="flex-1 border border-blue-200 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white" 
-                  placeholder="Aranacak konu (Örn: Logaritma)" 
+                  className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-blue-600 focus:bg-white transition-all" 
+                  placeholder="Örn: 1. Sınıf Matematik..." 
                   value={ideationTopic} 
                   onChange={(e) => setIdeationTopic(e.target.value)} 
                 />
-                <button type="submit" disabled={isIdeating} className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 rounded-lg text-sm transition-colors">
-                  {isIdeating ? 'Tarama...' : 'Analiz Et'}
+                <button type="submit" disabled={isIdeating} className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 rounded-xl text-sm transition-all shadow-sm disabled:opacity-50">
+                  {isIdeating ? 'Arıyor...' : 'Analiz'}
                 </button>
               </form>
 
               {suggestedIdeas.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-xs font-semibold text-blue-800 mb-2 uppercase tracking-wide">Önerilen Konular (Seçiniz):</p>
-                  <div className="space-y-2 mb-4 max-h-48 overflow-y-auto pr-1">
+                <div className="mt-4 space-y-3">
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                     {suggestedIdeas.map((idea, idx) => (
-                      <label key={idx} className={`flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-colors border ${selectedIdeas.includes(idea) ? 'bg-blue-100 border-blue-300' : 'bg-white border-transparent hover:border-blue-200'}`}>
-                        <input type="checkbox" className="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-blue-500" checked={selectedIdeas.includes(idea)} onChange={() => toggleIdeaSelection(idea)} />
-                        <span className="text-sm text-gray-800 leading-tight">
-                           {idx === 0 || idx === 1 ? '🔥 Yüksek Hacim: ' : '📊 Orta Hacim: '} {idea}
+                      <label key={idx} className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all border ${selectedIdeas.includes(idea) ? 'bg-blue-50 border-blue-300 text-blue-900' : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300'}`}>
+                        <input type="checkbox" className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked={selectedIdeas.includes(idea)} onChange={() => toggleIdeaSelection(idea)} />
+                        <span className="text-xs leading-relaxed font-medium">
+                           {idx === 0 || idx === 1 ? '🔥 ' : '📊 '} {idea}
                         </span>
                       </label>
                     ))}
                   </div>
-                  <button onClick={addIdeasToQueue} disabled={selectedIdeas.length === 0} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
-                    Seçilenleri Üretim Kuyruğuna Ekle ⬇️
+                  <button onClick={addIdeasToQueue} disabled={selectedIdeas.length === 0} className="w-full bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-700 font-semibold py-2.5 rounded-xl text-xs transition-all border border-gray-200">
+                    Seçilenleri Kuyruğa Ekle ⬇️
                   </button>
                 </div>
               )}
             </div>
 
-            {/* TOPLU ÜRETİM MODU */}
+            {/* ÜRETİM KUYRUĞU */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                <span className="bg-blue-100 text-blue-600 p-2 rounded-lg mr-2">🏭</span>
-                Üretim Kuyruğu
+              <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="text-indigo-600">🏭</span> Üretim Kuyruğu
               </h2>
               <form onSubmit={handleGenerate} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Konular (Yukarıdan aktarın veya yazın)</label>
-                  <textarea className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm leading-relaxed" rows={4} value={topicsInput} onChange={(e) => setTopicsInput(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rakip URL (Opsiyonel)</label>
-                  <input type="url" className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 text-sm" value={url} onChange={(e) => setUrl(e.target.value)} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Dil & Ton</label>
-                    <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none" value={tone} onChange={(e) => setTone(e.target.value)}>
-                      <option>Profesyonel ve Bilgi Verici</option>
-                      <option>Samimi ve Eğlenceli</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Uzunluk</label>
-                    <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none" value={length} onChange={(e) => setLength(e.target.value)}>
-                      <option>Orta (500-800 Kelime)</option>
-                      <option>Uzun (800-1200 Kelime)</option>
-                    </select>
-                  </div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Konular (Her satıra bir tane)</label>
+                  <textarea className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-3 text-sm text-gray-900 outline-none focus:border-blue-600 focus:bg-white transition-all resize-none" rows={3} value={topicsInput} onChange={(e) => setTopicsInput(e.target.value)} placeholder="Konu 1&#10;Konu 2" required />
                 </div>
                 
-                <button type="submit" disabled={isGenerating} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center">
-                  {isGenerating ? <span className="animate-pulse">Üretiliyor ({progress.current}/{progress.total})... ⏳</span> : <span>Kuyruktakileri Üret 🚀</span>}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Rakip URL (Opsiyonel)</label>
+                  <input type="url" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-blue-600 focus:bg-white" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Yazım Tarzı</label>
+                    <select className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-900 outline-none focus:border-blue-600" value={tone} onChange={(e) => setTone(e.target.value)}>
+                      <option value="Bilgilendirme">Bilgilendirme</option>
+                      <option value="Rehber">Rehber</option>
+                      <option value="Eğlenceli">Eğlenceli</option>
+                      <option value="Resmi Dil">Resmi Dil</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Uzunluk</label>
+                    <select className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-900 outline-none focus:border-blue-600" value={length} onChange={(e) => setLength(e.target.value)}>
+                      <option value="Kısa (300 kelime)">Kısa (~300 k.)</option>
+                      <option value="Orta (600 kelime)">Orta (~600 k.)</option>
+                      <option value="Uzun (800 ve üzeri kelime)">Uzun (800+ k.)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Özel Talimatlar</label>
+                  <input type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-900 outline-none focus:border-blue-600 focus:bg-white" value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} placeholder="Örn: Şuna odaklan..." />
+                </div>
+                
+                <button type="submit" disabled={isGenerating} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md text-sm disabled:opacity-50">
+                  {isGenerating ? `Üretiliyor (${progress.current}/${progress.total})... ⏳` : 'Sihirli Üretimi Başlat 🚀'}
                 </button>
               </form>
             </div>
 
             {/* GEÇMİŞ VE FAVORİLER */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden min-h-[300px]">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden min-h-[280px]">
               <div className="flex border-b border-gray-200">
-                <button onClick={() => setActiveTab('history')} className={`flex-1 py-3 text-sm font-semibold text-center transition-colors ${activeTab === 'history' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>🕒 Geçmiş</button>
-                <button onClick={() => setActiveTab('favorites')} className={`flex-1 py-3 text-sm font-semibold text-center transition-colors ${activeTab === 'favorites' ? 'bg-yellow-50 text-yellow-700 border-b-2 border-yellow-500' : 'text-gray-500 hover:bg-gray-50'}`}>⭐ Favoriler</button>
+                <button onClick={() => setActiveTab('history')} className={`flex-1 py-3 text-xs font-bold tracking-wider uppercase transition-all ${activeTab === 'history' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>🕒 Geçmiş</button>
+                <button onClick={() => setActiveTab('favorites')} className={`flex-1 py-3 text-xs font-bold tracking-wider uppercase transition-all ${activeTab === 'favorites' ? 'bg-amber-50 text-amber-600 border-b-2 border-amber-500' : 'text-gray-500 hover:bg-gray-50'}`}>⭐ Favoriler</button>
               </div>
               
-              <div className="p-4 flex-1 overflow-y-auto">
+              <div className="p-4 flex-1 overflow-y-auto space-y-2">
                 {activeTab === 'history' && history.map((item, i) => (
-                  <div key={i} onClick={() => setGeneratedContent(item)} className="p-3 mb-2 border border-gray-100 rounded-lg hover:bg-blue-50 cursor-pointer">
-                    <p className="font-semibold text-gray-800 text-sm line-clamp-1">{item.newTitle}</p>
-                    <p className="text-xs text-gray-500 mt-1">{new Date(item.id).toLocaleDateString()} - {item.focusKeyword}</p>
+                  <div key={i} onClick={() => setGeneratedContent(item)} className="p-3 bg-gray-50 border border-gray-200 rounded-xl hover:border-blue-400 cursor-pointer transition-all group">
+                    <p className="font-semibold text-gray-800 text-xs line-clamp-1 group-hover:text-blue-600 transition-colors">{item.newTitle}</p>
+                    <span className="text-[10px] text-gray-400 mt-1 block">{item.focusKeyword}</span>
                   </div>
                 ))}
-                
-                {activeTab === 'favorites' && favorites.length === 0 && <p className="text-sm text-gray-500 text-center mt-4">Henüz favorilere eklenmiş bir yazı yok.</p>}
                 {activeTab === 'favorites' && favorites.map((item, i) => (
-                  <div key={i} onClick={() => setGeneratedContent(item)} className="p-3 mb-2 border border-yellow-100 bg-yellow-50 rounded-lg hover:bg-yellow-100 cursor-pointer">
-                    <p className="font-semibold text-gray-800 text-sm line-clamp-1">⭐ {item.newTitle}</p>
+                  <div key={i} onClick={() => setGeneratedContent(item)} className="p-3 bg-amber-50/50 border border-amber-200 rounded-xl hover:border-amber-400 cursor-pointer transition-all group">
+                    <p className="font-semibold text-amber-900 text-xs line-clamp-1">⭐ {item.newTitle}</p>
                   </div>
                 ))}
               </div>
@@ -269,129 +279,131 @@ export default function ContentStudio() {
             {generatedContent ? (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="bg-gray-50 border-b border-gray-200 p-4 flex justify-between items-center">
-                   <div className="flex items-center gap-3">
-                      <button onClick={() => toggleFavorite(generatedContent)} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border font-medium text-sm transition-colors ${isCurrentFavorite ? 'bg-yellow-100 border-yellow-300 text-yellow-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'}`}>
-                        {isCurrentFavorite ? '⭐ Favorilerde' : '☆ Favoriye Ekle'}
-                      </button>
-                   </div>
-                  <button onClick={() => handleCopyMini(generatedContent.blogPost, 'makale')} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm flex items-center gap-2">
-                    {copiedField === 'makale' ? '✅ Kopyalandı' : '📝 Tamamını Kopyala'}
+                   <button onClick={() => toggleFavorite(generatedContent)} className={`px-4 py-2 rounded-xl border text-xs font-bold transition-all ${isCurrentFavorite ? 'bg-amber-100 border-amber-300 text-amber-800 shadow-sm' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100'}`}>
+                     {isCurrentFavorite ? '⭐ Favorilerde' : '☆ Favoriye Ekle'}
+                   </button>
+                  <button onClick={() => handleCopyMini(generatedContent.blogPost, 'makale')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-xl text-xs transition-all shadow-sm">
+                    {copiedField === 'makale' ? '✅ Kopyalandı' : '📝 Makaleyi Kopyala'}
                   </button>
                 </div>
 
-                <div className="p-6 md:p-8">
-                  <div className="mb-8">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">🎯 SEO Meta Verileri</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      
-                      <div className="bg-white border border-gray-200 rounded-xl p-4 flex justify-between items-start shadow-sm group hover:border-blue-300 transition-colors">
-                        <div className="pr-2">
-                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Odak Kelime</span>
-                          <p className="text-gray-900 font-semibold">{generatedContent.focusKeyword}</p>
+                <div className="p-6 md:p-8 space-y-8">
+                  
+                  {/* SEO SKOR KARTI */}
+                  {generatedContent.seoAnalytics && (
+                    <div className="bg-gradient-to-br from-gray-900 to-blue-950 text-white p-6 rounded-2xl shadow-lg border border-gray-800 relative overflow-hidden">
+                      <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-5 border-b border-gray-800">
+                        <div>
+                          <span className="text-[10px] uppercase tracking-widest text-blue-400 font-extrabold block mb-1">Optimizasyon Analizi</span>
+                          <h3 className="text-xl font-black text-white">SEO Skor Kartı</h3>
                         </div>
-                        <button onClick={() => handleCopyMini(generatedContent.focusKeyword, 'keyword')} className="text-gray-400 hover:text-blue-600 p-1" title="Kopyala">
-                          {copiedField === 'keyword' ? '✅' : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>}
-                        </button>
-                      </div>
-
-                      <div className="bg-white border border-gray-200 rounded-xl p-4 flex justify-between items-start shadow-sm group hover:border-blue-300 transition-colors">
-                        <div className="pr-2">
-                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Kısa URL (Slug)</span>
-                          <p className="text-blue-600 font-medium font-mono text-sm">/{generatedContent.slug}</p>
-                        </div>
-                        <button onClick={() => handleCopyMini(generatedContent.slug, 'slug')} className="text-gray-400 hover:text-blue-600 p-1" title="Kopyala">
-                           {copiedField === 'slug' ? '✅' : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>}
-                        </button>
-                      </div>
-
-                      <div className="bg-white border border-gray-200 rounded-xl p-4 flex justify-between items-start shadow-sm group hover:border-blue-300 transition-colors md:col-span-2">
-                        <div className="pr-2">
-                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Makale Başlığı (H1)</span>
-                          <p className="text-gray-900 font-medium">{generatedContent.newTitle}</p>
-                        </div>
-                        <button onClick={() => handleCopyMini(generatedContent.newTitle, 'title')} className="text-gray-400 hover:text-blue-600 p-1 flex-shrink-0" title="Kopyala">
-                           {copiedField === 'title' ? '✅' : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>}
-                        </button>
-                      </div>
-
-                      <div className="bg-white border border-gray-200 rounded-xl p-4 flex justify-between items-start shadow-sm group hover:border-blue-300 transition-colors md:col-span-2">
-                        <div className="pr-2">
-                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Meta Açıklama (Description)</span>
-                          <p className="text-gray-600 text-sm leading-relaxed">{generatedContent.metaDescription}</p>
-                        </div>
-                        <button onClick={() => handleCopyMini(generatedContent.metaDescription, 'meta')} className="text-gray-400 hover:text-blue-600 p-1 flex-shrink-0" title="Kopyala">
-                           {copiedField === 'meta' ? '✅' : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>}
-                        </button>
-                      </div>
-
-                      <div className="bg-white border border-gray-200 rounded-xl p-4 flex justify-between items-start shadow-sm group hover:border-blue-300 transition-colors md:col-span-2">
-                        <div className="pr-2 w-full">
-                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Etiketler (Tags)</span>
-                          <div className="flex gap-2 flex-wrap">
-                            {generatedContent.tags?.map((tag: string, i: number) => (
-                              <span key={i} className="bg-gray-100 border border-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">#{tag}</span>
-                            ))}
+                        <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-2xl border border-white/10 backdrop-blur-md">
+                          <span className="text-3xl font-black text-emerald-400">{generatedContent.seoAnalytics.score}</span>
+                          <div className="text-[10px] text-gray-300 leading-tight">
+                            <span className="font-bold text-white block">Genel Skor</span>
+                            / 100 Puan
                           </div>
                         </div>
-                        <button onClick={() => handleCopyMini(generatedContent.tags?.join(', '), 'tags')} className="text-gray-400 hover:text-blue-600 p-1 flex-shrink-0" title="Kopyala">
-                           {copiedField === 'tags' ? '✅' : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>}
-                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
+                        {generatedContent.seoAnalytics.checks.map((check: any, idx: number) => (
+                          <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-3.5 flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">{check.label}</span>
+                              <span className="text-xs font-semibold text-gray-200">{check.desc}</span>
+                            </div>
+                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${
+                              check.status === 'Mükemmel' || check.status === 'İyi' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 
+                              check.status === 'Uyarı' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            }`}>
+                              {check.status}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Kapak Görseli */}
-                  {generatedContent.imagePrompts && generatedContent.imagePrompts.length > 0 && (
-                     <div className="mb-8 relative rounded-xl overflow-hidden shadow-md bg-gray-900 group">
+                  {/* KAPAK GÖRSELİ */}
+                  {generatedContent.bakedImage && (
+                     <div className="rounded-2xl overflow-hidden shadow-md bg-gray-100 border border-gray-200">
                         <img 
-                          src={`https://image.pollinations.ai/prompt/${encodeURIComponent(generatedContent.imagePrompts[0])}?width=1024&height=512&nologo=true`} 
-                          alt="AI Makale Kapağı"
-                          className="w-full h-64 object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                          src={generatedContent.bakedImage} 
+                          alt="Kapak Görseli"
+                          className="w-full h-auto object-cover"
                         />
                      </div>
                   )}
 
-                  {/* YENİ: Makale İçeriği (LaTeX Destekli) */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">📝 Makale İçeriği (LaTeX Uyumlu)</h3>
-                    <div className="prose prose-blue max-w-none text-gray-800 bg-gray-50 p-6 rounded-xl border border-gray-100 shadow-inner">
+                  {/* MAKALE İÇERİĞİ */}
+                  <div>
+                    <h3 className="text-base font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200 flex items-center gap-2">
+                      <span>📝</span> Makale İçeriği (Markdown)
+                    </h3>
+                    <div className="prose max-w-none text-gray-800 bg-gray-50 p-6 rounded-2xl border border-gray-200 text-sm leading-relaxed shadow-inner">
                       <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
                         {generatedContent.blogPost}
                       </ReactMarkdown>
                     </div>
                   </div>
                   
-                  {/* YENİ: Sosyal Medya Paylaşımları */}
+                  {/* SOSYAL MEDYA & PROMPTLAR */}
                   {generatedContent.socialMedia && (
-                    <div className="mt-8">
-                       <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">📱 Sosyal Medya Çıktıları</h3>
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          
-                          {/* Twitter */}
-                          <div className="border border-blue-200 rounded-xl bg-blue-50/50 p-5 relative">
-                             <h4 className="font-bold text-blue-600 mb-2 flex items-center gap-2">🐦 X (Twitter) Flood</h4>
-                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{generatedContent.socialMedia.twitter}</p>
-                             <button onClick={() => handleCopyMini(generatedContent.socialMedia.twitter, 'twitter')} className="mt-3 text-xs bg-white border border-blue-200 px-3 py-1 rounded shadow-sm hover:bg-blue-50 text-blue-700 font-medium">Kopyala</button>
-                          </div>
-
-                          {/* Instagram */}
-                          <div className="border border-pink-200 rounded-xl bg-pink-50/50 p-5 relative">
-                             <h4 className="font-bold text-pink-600 mb-2 flex items-center gap-2">📸 Instagram Post</h4>
-                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{generatedContent.socialMedia.instagram}</p>
-                             <button onClick={() => handleCopyMini(generatedContent.socialMedia.instagram, 'instagram')} className="mt-3 text-xs bg-white border border-pink-200 px-3 py-1 rounded shadow-sm hover:bg-pink-50 text-pink-700 font-medium">Kopyala</button>
-                          </div>
-
+                    <div className="space-y-6 pt-4 border-t border-gray-200">
+                       <h3 className="text-base font-bold text-gray-800">📱 Sosyal Medya & Slayt Görsel Promptları</h3>
+                       
+                       {/* X / Twitter */}
+                       <div className="border border-blue-200 rounded-2xl bg-blue-50/50 p-5 space-y-3">
+                          <h4 className="font-bold text-blue-700 text-xs flex items-center gap-1.5 uppercase tracking-wider">🐦 X (Twitter) Uzun Flood</h4>
+                          <p className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">{generatedContent.socialMedia.twitter}</p>
+                          <button onClick={() => handleCopyMini(generatedContent.socialMedia.twitter, 'tw')} className="text-xs bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 px-4 py-2 rounded-xl font-semibold transition-all shadow-sm">
+                            {copiedField === 'tw' ? '✅ Kopyalandı' : 'Flood Metnini Kopyala'}
+                          </button>
                        </div>
+
+                       {/* Instagram Caption */}
+                       <div className="border border-pink-200 rounded-2xl bg-pink-50/50 p-5 space-y-3">
+                          <h4 className="font-bold text-pink-700 text-xs flex items-center gap-1.5 uppercase tracking-wider">💬 Instagram Caption & Hashtagler</h4>
+                          <p className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">{generatedContent.socialMedia.instagramCaption}</p>
+                          <button onClick={() => handleCopyMini(generatedContent.socialMedia.instagramCaption, 'ig-caption')} className="text-xs bg-white border border-pink-200 hover:bg-pink-50 text-pink-700 px-4 py-2 rounded-xl font-semibold transition-all shadow-sm">
+                            {copiedField === 'ig-caption' ? '✅ Kopyalandı' : 'Açıklamayı Kopyala'}
+                          </button>
+                       </div>
+
+                       {/* İNSTAGRAM SLAYT GÖRSEL PROMPTLARI */}
+                       {generatedContent.socialMedia.instagramPromptSlides && (
+                          <div className="space-y-4">
+                             <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider">🖼️ Instagram Slayt Görsel Promptları (1:1 Kare)</h4>
+                             <div className="space-y-3">
+                                {generatedContent.socialMedia.instagramPromptSlides.map((slide: any, idx: number) => (
+                                   <div key={idx} className="border border-gray-200 rounded-2xl bg-gray-50 p-4 space-y-2">
+                                      <span className="text-[10px] font-bold uppercase tracking-widest text-pink-600 block">Slayt #{slide.slideNo} Promptu:</span>
+                                      <div className="relative bg-white border border-gray-200 rounded-xl p-3">
+                                         <p className="text-xs font-mono text-gray-800 select-all pr-24">{slide.imageGenPrompt}</p>
+                                         <button 
+                                           onClick={() => handleCopyMini(slide.imageGenPrompt, `slide-${idx}`)} 
+                                           className="absolute top-2.5 right-2.5 text-xs bg-pink-600 hover:bg-pink-700 text-white px-3 py-1.5 rounded-lg font-medium transition-all shadow-sm"
+                                         >
+                                           {copiedField === `slide-${idx}` ? '✅ Kopyalandı' : 'Promptu Kopyala'}
+                                         </button>
+                                      </div>
+                                   </div>
+                                ))}
+                             </div>
+                          </div>
+                       )}
+
                     </div>
                   )}
 
                 </div>
               </div>
             ) : (
-              <div className="h-full min-h-[400px] bg-white rounded-2xl border flex flex-col items-center justify-center text-gray-400 p-8">
-                <span className="text-5xl mb-4">⚙️</span>
-                <h3 className="text-xl font-bold text-gray-600 mb-2">Makale Motoru Beklemede</h3>
-                <p className="text-center text-sm mt-2 max-w-md">Sol taraftaki panelden "Limit", "Türev" gibi konular aratarak trendleri görebilir, seçtiklerini LaTeX ve Sosyal Medya destekli üretime sokabilirsin.</p>
+              <div className="h-full min-h-[500px] bg-white rounded-2xl border border-gray-200 flex flex-col items-center justify-center text-gray-400 p-8 text-center shadow-sm">
+                <span className="text-5xl mb-4 animate-bounce">✨</span>
+                <h3 className="text-xl font-bold text-gray-700 mb-2">Komuta Merkezi Beklemede</h3>
+                <p className="text-xs text-gray-500 max-w-sm leading-relaxed">Sol panelden konularını seç, yazım tarzını belirle ve yapay zeka destekli içerik üretimini ateşle.</p>
               </div>
             )}
           </div>
