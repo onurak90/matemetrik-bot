@@ -25,7 +25,8 @@ export default function ContentStudio() {
   const [history, setHistory] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'history' | 'favorites'>('history');
-  
+
+  const [selectedExportIds, setSelectedExportIds] = useState<number[]>([]);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
@@ -76,7 +77,7 @@ export default function ContentStudio() {
     setIdeationTopic('');
   };
 
-  const handleGenerate = async (e: React.FormEvent) => {
+  const handleGenerate = async (e: React.FormEvent, isBulk: boolean = false) => {
     e.preventDefault();
     const topicsList = topicsInput.split('\n').map(t => t.trim()).filter(t => t !== '');
     if (topicsList.length === 0) return alert("Lütfen en az bir konu girin!");
@@ -86,37 +87,99 @@ export default function ContentStudio() {
 
     let currentHistory = [...history];
 
-    for (let i = 0; i < topicsList.length; i++) {
-      const currentTopic = topicsList[i];
-      setProgress({ current: i + 1, total: topicsList.length, currentTopic });
-
+    if (isBulk) {
+      setProgress({ current: topicsList.length, total: topicsList.length, currentTopic: 'Toplu İşleniyor...' });
       try {
         const res = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ topic: currentTopic, url, tone, length, customInstructions })
+          body: JSON.stringify({ mode: 'bulk', bulkTopics: topicsList, tone, length, customInstructions })
         });
         
         const data = await res.json();
         if (data.error) throw new Error(data.error);
-        
-        const contentWithData = { ...data, originalTopic: currentTopic, id: Date.now() + i };
-        
-        currentHistory = [contentWithData, ...currentHistory];
-        setHistory(currentHistory);
-        localStorage.setItem('matemetrik_history', JSON.stringify(currentHistory));
-        setGeneratedContent(contentWithData);
 
-        if (i < topicsList.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 3000));
+        const itemsArray = data.items || data;
+        if (Array.isArray(itemsArray)) {
+          currentHistory = [...itemsArray, ...currentHistory];
+          setHistory(currentHistory);
+          localStorage.setItem('matemetrik_history', JSON.stringify(currentHistory));
+          setGeneratedContent(itemsArray[0]);
         }
       } catch (error: any) {
-        alert(`'${currentTopic}' üretilirken hata oluştu: ` + error.message);
+        alert("Toplu üretim hatası: " + error.message);
+      }
+    } else {
+      for (let i = 0; i < topicsList.length; i++) {
+        const currentTopic = topicsList[i];
+        setProgress({ current: i + 1, total: topicsList.length, currentTopic });
+
+        try {
+          const res = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ topic: currentTopic, url, tone, length, customInstructions, mode: 'single' })
+          });
+          
+          const data = await res.json();
+          if (data.error) throw new Error(data.error);
+          
+          const contentWithData = { ...data, originalTopic: currentTopic, id: Date.now() + i };
+          
+          currentHistory = [contentWithData, ...currentHistory];
+          setHistory(currentHistory);
+          localStorage.setItem('matemetrik_history', JSON.stringify(currentHistory));
+          setGeneratedContent(contentWithData);
+
+          if (i < topicsList.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        } catch (error: any) {
+          alert(`'${currentTopic}' üretilirken hata oluştu: ` + error.message);
+        }
       }
     }
 
     setIsGenerating(false);
     setProgress({ current: 0, total: 0, currentTopic: '' });
+  };
+
+  const toggleExportSelection = (id: number) => {
+    if (selectedExportIds.includes(id)) {
+      setSelectedExportIds(selectedExportIds.filter(itemid => itemid !== id));
+    } else {
+      setSelectedExportIds([...selectedExportIds, id]);
+    }
+  };
+
+  const exportSelectedToWordPressXml = async () => {
+    const targetList = activeTab === 'history' ? history : favorites;
+    const itemsToExport = targetList.filter(item => selectedExportIds.includes(item.id));
+
+    if (itemsToExport.length === 0) {
+      return alert("Lütfen dışa aktarmak için listeden en az bir makale seçin!");
+    }
+
+    try {
+      const res = await fetch('/api/export-xml', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: itemsToExport })
+      });
+
+      if (!res.ok) throw new Error("XML oluşturulamadı.");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `matemetrik-export-${Date.now()}.xml`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err: any) {
+      alert("Dışa aktarma hatası: " + err.message);
+    }
   };
 
   const toggleFavorite = (item: any) => {
@@ -154,7 +217,7 @@ export default function ContentStudio() {
                 Matemetrik Pro Stüdyo
               </h1>
             </div>
-            <p className="text-gray-500 text-xs md:text-sm mt-1 ml-11">Yapay Zeka Destekli Modern SEO & Sosyal Medya Komuta Merkezi</p>
+            <p className="text-gray-500 text-xs md:text-sm mt-1 ml-11">Yapay Zeka Destekli Modern SEO & Seçmeli WordPress XML Fabrikası</p>
           </div>
           <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-xs font-semibold text-emerald-700">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -209,10 +272,10 @@ export default function ContentStudio() {
               <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <span className="text-indigo-600">🏭</span> Üretim Kuyruğu
               </h2>
-              <form onSubmit={handleGenerate} className="space-y-4">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Konular (Her satıra bir tane)</label>
-                  <textarea className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-3 text-sm text-gray-900 outline-none focus:border-blue-600 focus:bg-white transition-all resize-none" rows={3} value={topicsInput} onChange={(e) => setTopicsInput(e.target.value)} placeholder="Konu 1&#10;Konu 2" required />
+                  <textarea className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-3 text-sm text-gray-900 outline-none focus:border-blue-600 focus:bg-white transition-all resize-none" rows={4} value={topicsInput} onChange={(e) => setTopicsInput(e.target.value)} placeholder="Konu 1&#10;Konu 2&#10;Konu 3" required />
                 </div>
                 
                 <div>
@@ -245,31 +308,51 @@ export default function ContentStudio() {
                   <input type="text" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-900 outline-none focus:border-blue-600 focus:bg-white" value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} placeholder="Örn: Şuna odaklan..." />
                 </div>
                 
-                <button type="submit" disabled={isGenerating} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md text-sm disabled:opacity-50">
-                  {isGenerating ? `Üretiliyor (${progress.current}/${progress.total})... ⏳` : 'Sihirli Üretimi Başlat 🚀'}
-                </button>
-              </form>
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button onClick={(e) => handleGenerate(e, false)} disabled={isGenerating} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-2 rounded-xl transition-all shadow-md text-xs disabled:opacity-50">
+                    {isGenerating ? `Üretiliyor...` : 'Sıralı Üret 🚀'}
+                  </button>
+                  <button onClick={(e) => handleGenerate(e, true)} disabled={isGenerating} className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-2 rounded-xl transition-all shadow-md text-xs disabled:opacity-50">
+                    {isGenerating ? `İşleniyor...` : 'Toplu Üret ⚡'}
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* GEÇMİŞ VE FAVORİLER */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden min-h-[280px]">
+            {/* GEÇMİŞ VE SEÇMELİ XML DIŞA AKTARIM */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden min-h-[320px]">
               <div className="flex border-b border-gray-200">
                 <button onClick={() => setActiveTab('history')} className={`flex-1 py-3 text-xs font-bold tracking-wider uppercase transition-all ${activeTab === 'history' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>🕒 Geçmiş</button>
                 <button onClick={() => setActiveTab('favorites')} className={`flex-1 py-3 text-xs font-bold tracking-wider uppercase transition-all ${activeTab === 'favorites' ? 'bg-amber-50 text-amber-600 border-b-2 border-amber-500' : 'text-gray-500 hover:bg-gray-50'}`}>⭐ Favoriler</button>
               </div>
               
               <div className="p-4 flex-1 overflow-y-auto space-y-2">
-                {activeTab === 'history' && history.map((item, i) => (
-                  <div key={i} onClick={() => setGeneratedContent(item)} className="p-3 bg-gray-50 border border-gray-200 rounded-xl hover:border-blue-400 cursor-pointer transition-all group">
-                    <p className="font-semibold text-gray-800 text-xs line-clamp-1 group-hover:text-blue-600 transition-colors">{item.newTitle}</p>
-                    <span className="text-[10px] text-gray-400 mt-1 block">{item.focusKeyword}</span>
+                {(activeTab === 'history' ? history : favorites).map((item, idx) => (
+                  <div key={`${item.id}-${idx}`} className="p-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between gap-2 hover:border-blue-400 transition-all">
+                    <label className="flex items-center gap-2.5 flex-1 cursor-pointer overflow-hidden">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={selectedExportIds.includes(item.id)}
+                        onChange={() => toggleExportSelection(item.id)}
+                      />
+                      <span onClick={() => setGeneratedContent(item)} className="font-semibold text-gray-800 text-xs line-clamp-1 hover:text-blue-600">
+                        {item.newTitle}
+                      </span>
+                    </label>
                   </div>
                 ))}
-                {activeTab === 'favorites' && favorites.map((item, i) => (
-                  <div key={i} onClick={() => setGeneratedContent(item)} className="p-3 bg-amber-50/50 border border-amber-200 rounded-xl hover:border-amber-400 cursor-pointer transition-all group">
-                    <p className="font-semibold text-amber-900 text-xs line-clamp-1">⭐ {item.newTitle}</p>
-                  </div>
-                ))}
+              </div>
+
+              {/* SEÇİLENLERİ XML İNDİR BUTONU */}
+              <div className="p-4 border-t border-gray-200 bg-gray-50">
+                <button 
+                  onClick={exportSelectedToWordPressXml}
+                  disabled={selectedExportIds.length === 0}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-2"
+                >
+                  <span>📥</span> Seçilenleri WordPress XML İndir ({selectedExportIds.length})
+                </button>
               </div>
             </div>
           </div>
@@ -403,7 +486,7 @@ export default function ContentStudio() {
               <div className="h-full min-h-[500px] bg-white rounded-2xl border border-gray-200 flex flex-col items-center justify-center text-gray-400 p-8 text-center shadow-sm">
                 <span className="text-5xl mb-4 animate-bounce">✨</span>
                 <h3 className="text-xl font-bold text-gray-700 mb-2">Komuta Merkezi Beklemede</h3>
-                <p className="text-xs text-gray-500 max-w-sm leading-relaxed">Sol panelden konularını seç, yazım tarzını belirle ve yapay zeka destekli içerik üretimini ateşle.</p>
+                <p className="text-xs text-gray-500 max-w-sm leading-relaxed">Sol panelden geçmişteki makalelerini seçip istediklerini WordPress XML olarak indirebilirsin.</p>
               </div>
             )}
           </div>
